@@ -5,7 +5,11 @@ COPY . .
 RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -o /override
 
+FROM alpine:latest as certs
+RUN apk --update add ca-certificates
+
 # 使用alpine作为运行环境
 FROM alpine
+COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /override /override
-ENTRYPOINT ["/bin/sh", "-c", "/override > override.log 2>&1"]
+ENTRYPOINT ["/override"]
