@@ -36,7 +36,7 @@ config.json 配置
 }
 ```
 
-`organization` 和 `project` 除非你有，且知道怎么会是再填。
+`organization` 和 `project` 除非你有，且知道怎么回事再填。
 
 `chat_model_map` 是个模型映射的字典。会将请求的模型映射到你想要的，如果不存在映射，则使用 `chat_model_default` 。
 
