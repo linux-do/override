@@ -1,5 +1,5 @@
 # 使用官方Go镜像作为构建环境
-FROM golang:1.18 AS builder
+FROM golang:1.22.3 AS builder
 WORKDIR /app
 COPY . .
 RUN go mod download
