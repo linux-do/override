@@ -1,0 +1,9 @@
+services:
+  override:
+    image: ghcr.io/linux-do/override/override:latest
+    container_name: override
+    restart: always
+    ports:
+      - "8181:8181"
+    volumes:
+      - ./config.json:/config.json
