@@ -1,7 +1,7 @@
 services:
   override-app:
     image: override:latest
-    container_name: override
+    container_name: override-app
     restart: always
     build:
         context: .
