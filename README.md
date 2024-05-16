@@ -45,3 +45,8 @@ config.json 配置
 3. 我目前就试了下 `VSCode` ，至于 `JetBrains` 等IDE尚未适配，如果你有相关经验，请告诉我。
 4. 项目基于 `MIT` 协议发布，你可以修改，请保留原作者信息。
 5. 有什么问题，请在论坛 https://linux.do 讨论，欢迎PR。
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=linux-do/override&type=Date)](https://star-history.com/#linux-do/override&Date)   
+
