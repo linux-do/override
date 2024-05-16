@@ -1,0 +1,10 @@
+services:
+  override:
+    image: override:latest
+    container_name: override
+    restart: always
+    build:
+        context: .
+        dockerfile: Dockerfile
+    ports:
+        - "8181:8181"
