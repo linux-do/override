@@ -13,7 +13,7 @@ RUN go mod download
 
 # 复制源代码并构建应用
 COPY . .
-RUN go build -ldflags "-s -w" -o /app/groqai2api .
+RUN go build -ldflags "-s -w" -o /app/override .
 
 # 使用 Alpine Linux 作为最终镜像
 FROM alpine:latest
@@ -22,9 +22,9 @@ FROM alpine:latest
 WORKDIR /app
 
 # 从构建阶段复制编译好的应用和资源
-COPY --from=builder /app/groqai2api /app/groqai2api
+COPY --from=builder /app/override /app/override
 
 # 暴露端口
 EXPOSE 8080
 
-CMD ["/app/groqai2api"]
+CMD ["/app/override"]
