@@ -1,10 +1,12 @@
 services:
-  override:
+  override-app:
     image: override:latest
     container_name: override
     restart: always
     build:
         context: .
         dockerfile: Dockerfile
+    volumes:
+      - ./config.json:/app/config.json
     ports:
         - "8181:8181"
