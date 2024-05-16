@@ -1,6 +1,6 @@
 services:
   override-app:
-    image: override:latest
+    image: linux-do/override:latest
     container_name: override-app
     restart: always
     build:
