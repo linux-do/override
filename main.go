@@ -221,6 +221,9 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 
 	body, _ = sjson.DeleteBytes(body, "extra")
 	body, _ = sjson.DeleteBytes(body, "nwo")
+	if s.cfg.CodexModelDefault == "" {
+		s.cfg.CodexModelDefault = "gpt-3.5-turbo-instruct"
+	}
 	body, _ = sjson.SetBytes(body, "model", s.cfg.CodexModelDefault)
 
 	proxyUrl := s.cfg.CodexApiBase
