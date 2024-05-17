@@ -37,6 +37,7 @@ config.json 配置
   "codex_api_key": "sk-xxx",
   "codex_api_organization": "",
   "codex_api_project": "",
+  "codex_max_tokens": 4093,
   "chat_api_base": "https://api-proxy.oaipro.com/v1",
   "chat_api_key": "sk-xxx",
   "chat_api_organization": "",
@@ -49,6 +50,10 @@ config.json 配置
 `organization` 和 `project` 除非你有，且知道怎么回事再填。
 
 `chat_model_map` 是个模型映射的字典。会将请求的模型映射到你想要的，如果不存在映射，则使用 `chat_model_default` 。
+
+`code_max_tokens` 可以设置为你希望的最大Token数，你设置的时候最好知道自己在做什么。
+
+可以通过 `OVERRIDE_` + 大写配置项作为环境变量，可以覆盖 `config.json` 中的值。例如：`OVERRIDE_CODEX_API_KEY=sk-xxxx`
 
 1. 理论上，Chat 部分可以使用 `chat2api` ，而 Codex 代码生成部分则不太适合使用 `chat2api` 。
 2. 代码生成部分做过延时生成和客户端 Cancel 处理，很有效节省你的Token。
