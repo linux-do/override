@@ -25,6 +25,7 @@ type config struct {
 	CodexApiKey          string            `json:"codex_api_key"`
 	CodexApiOrganization string            `json:"codex_api_organization"`
 	CodexApiProject      string            `json:"codex_api_project"`
+	CodexModelDefault    string            `json:"codex_model_default"`
 	ChatApiBase          string            `json:"chat_api_base"`
 	ChatApiKey           string            `json:"chat_api_key"`
 	ChatApiOrganization  string            `json:"chat_api_organization"`
@@ -46,6 +47,32 @@ func readConfig() *config {
 	}
 
 	return _cfg
+}
+
+type GPTMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+type StreamResponse struct {
+	Response string `json:"response"`
+}
+type Message struct {
+	Role    string  `json:"role,omitempty"`
+	Content any     `json:"content,omitempty"`
+	Name    *string `json:"name,omitempty"`
+}
+type ChatCompletionsStreamResponseChoice struct {
+	Index        int     `json:"index"`
+	Delta        Message `json:"delta"`
+	FinishReason *string `json:"finish_reason,omitempty"`
+}
+
+type ChatCompletionsStreamResponse struct {
+	Id      string                                `json:"id"`
+	Object  string                                `json:"object"`
+	Created int64                                 `json:"created"`
+	Model   string                                `json:"model"`
+	Choices []ChatCompletionsStreamResponseChoice `json:"choices"`
 }
 
 func getClient(cfg *config) (*http.Client, error) {
