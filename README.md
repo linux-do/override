@@ -67,7 +67,6 @@
   "codex_api_base": "https://api.cloudflare.com/client/v4/accounts/xxx/ai/run/@hf/thebloke/deepseek-coder-6.7b-instruct-awq",
   "codex_api_key": "xxx-xx",
   "codex_model_default":"@hf/thebloke/deepseek-coder-6.7b-instruct-awq",
-
 ```
 ### Star History
 
