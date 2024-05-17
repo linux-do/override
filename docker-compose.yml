@@ -1,0 +1,9 @@
+version: '3.4'
+
+services:
+  groq2api:
+    image: ghcr.io/linux-do/override:latest
+    container_name: override
+    restart: always
+    ports:
+      - "8181:8181"
