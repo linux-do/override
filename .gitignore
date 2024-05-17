@@ -29,9 +29,9 @@ Thumbs.db
 *.key
 *.log
 bin/
+config.json
 
 # Develop tools
 .vscode/
 .idea/
 *.swp
-config.json
