@@ -16,10 +16,10 @@
 ### JetBrains等 配置：
 
 按照 coco dash 页面截图配置后，执行对应系统的脚本后重启IDE：
-* scripts/install.sh 适用于 `macOS` 和 `Linux`
-* scripts/install-all-users.vbs 适用于 `Windows`，为电脑上所有用户配置，需要有管理员权限。
-* scripts/install-current-user.vbs 适用于 `Windows`，为当前用户配置，无需管理员权限。
-* scripts/uninstall 相关脚本与之对应，为卸载配置。
+* `scripts/install.sh` 适用于 `macOS` 和 `Linux`
+* `scripts/install-all-users.vbs` 适用于 `Windows`，为电脑上所有用户配置，需要有管理员权限。
+* `scripts/install-current-user.vbs` 适用于 `Windows`，为当前用户配置，无需管理员权限。
+* `scripts/uninstall` 相关脚本与之对应，为卸载配置。
 
 其中 `http://127.0.0.1:8181` 是你启动的 `override` 服务地址。
 
