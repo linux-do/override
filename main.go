@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -220,9 +221,19 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 
 	body, _ = sjson.DeleteBytes(body, "extra")
 	body, _ = sjson.DeleteBytes(body, "nwo")
-	body, _ = sjson.SetBytes(body, "model", "gpt-3.5-turbo-instruct")
+	body, _ = sjson.SetBytes(body, "model", s.cfg.CodexModelDefault)
 
-	proxyUrl := s.cfg.CodexApiBase + "/completions"
+	proxyUrl := s.cfg.CodexApiBase
+	if strings.HasPrefix(s.cfg.CodexModelDefault, "@") {
+		proxyUrl = s.cfg.CodexApiBase
+		message := gjson.GetBytes(body, "prompt").String()
+		body, _ = sjson.DeleteBytes(body, "prompt")
+		msg := make([]GPTMessage, 0)
+		msg = append(msg, GPTMessage{Role: "system", Content: "You are a helpful assistant"})
+		msg = append(msg, GPTMessage{Role: "user", Content: message})
+		body, _ = sjson.SetBytes(body, "messages", msg)
+		body, _ = sjson.DeleteBytes(body, "n")
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, proxyUrl, io.NopCloser(bytes.NewBuffer(body)))
 	if nil != err {
 		abortCodex(c, http.StatusInternalServerError)

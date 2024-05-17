@@ -2,7 +2,7 @@
   "bind": "127.0.0.1:8181",
   "proxy_url": "",
   "timeout": 600,
-  "codex_api_base": "https://api-proxy.oaipro.com/v1",
+  "codex_api_base": "https://api-proxy.oaipro.com/v1/completions",
   "codex_api_key": "sk-xxx",
   "codex_api_organization": "",
   "codex_api_project": "",
