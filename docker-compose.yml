@@ -1,9 +1,12 @@
-version: '3.4'
-
 services:
-  groq2api:
-    image: ghcr.io/linux-do/override:latest
-    container_name: override
+  override-app:
+    image: linux-do/override:latest
+    container_name: override-app
     restart: always
+    build:
+        context: .
+        dockerfile: Dockerfile
+    volumes:
+      - ./config.json:/app/config.json
     ports:
-      - "8181:8181"
+        - "8181:8181"
