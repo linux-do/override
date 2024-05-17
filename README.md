@@ -15,6 +15,16 @@ VSCode 配置：
 
 其中 `http://localhost:8181` 是你启动的 `override` 服务地址。
 
+JetBrains 配置：
+请在自己的.zshrc/.bashrc文件中配置好环境变量参数，然后重启JetBrains工具.
+```shell
+   ## code 配置
+   export AGENT_DEBUG_OVERRIDE_PROXY_URL="http://127.0.0.1:8181"
+   ## chat配置
+   export AGENT_DEBUG_OVERRIDE_CAPI_URL="http://127.0.0.1:8181/v1"
+```
+
+其中 `http://localhost:8181` 是你启动的 `override` 服务地址。
 
 config.json 配置
 
