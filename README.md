@@ -58,8 +58,17 @@
 3. 我目前就试了下 `VSCode` ，至于 `JetBrains` 等IDE尚未适配，如果你有相关经验，请告诉我。
 4. 项目基于 `MIT` 协议发布，你可以修改，请保留原作者信息。
 5. 有什么问题，请在论坛 https://linux.do 讨论，欢迎PR。
-6. 可以支持cf，目前最大token 1500左右 配置里字段名是 `"codex_model_default":"@hf/thebloke/deepseek-coder-6.7b-instruct-awq"`
+6. 可以支持cf，目前最大token 1500左右 配置里字段名是 "codex_model_default"
 
+## cloudflare 支持
+ https://developers.cloudflare.com/workers-ai/models/
+配置例子
+```json
+  "codex_api_base": "https://api.cloudflare.com/client/v4/accounts/xxx/ai/run/@hf/thebloke/deepseek-coder-6.7b-instruct-awq",
+  "codex_api_key": "xxx-xx",
+  "codex_model_default":"@hf/thebloke/deepseek-coder-6.7b-instruct-awq",
+
+```
 ### Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=linux-do/override&type=Date)](https://star-history.com/#linux-do/override&Date)   
