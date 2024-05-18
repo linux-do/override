@@ -6,7 +6,6 @@
   "codex_api_key": "sk-xxx",
   "codex_api_organization": "",
   "codex_api_project": "",
-  "codex_max_tokens": 2048,
   "chat_api_base": "https://api-proxy.oaipro.com/v1",
   "chat_api_key": "sk-xxx",
   "chat_api_organization": "",

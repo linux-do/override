@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/linux-do/tiktoken-go"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"golang.org/x/net/http2"
@@ -31,7 +30,6 @@ type config struct {
 	CodexApiKey          string            `json:"codex_api_key"`
 	CodexApiOrganization string            `json:"codex_api_organization"`
 	CodexApiProject      string            `json:"codex_api_project"`
-	CodexMaxTokens       int               `json:"codex_max_tokens"`
 	ChatApiBase          string            `json:"chat_api_base"`
 	ChatApiKey           string            `json:"chat_api_key"`
 	ChatApiOrganization  string            `json:"chat_api_organization"`
@@ -136,9 +134,8 @@ func closeIO(c io.Closer) {
 }
 
 type ProxyService struct {
-	cfg       *config
-	client    *http.Client
-	tokenizer *tiktoken.Tiktoken
+	cfg    *config
+	client *http.Client
 }
 
 func NewProxyService(cfg *config) (*ProxyService, error) {
@@ -147,15 +144,9 @@ func NewProxyService(cfg *config) (*ProxyService, error) {
 		return nil, err
 	}
 
-	tokenizer, err := tiktoken.EncodingForModel(InstructModel)
-	if nil != err {
-		return nil, err
-	}
-
 	return &ProxyService{
-		cfg:       cfg,
-		client:    client,
-		tokenizer: tokenizer,
+		cfg:    cfg,
+		client: client,
 	}, nil
 }
 
@@ -234,14 +225,6 @@ func (s *ProxyService) completions(c *gin.Context) {
 	_, _ = io.Copy(c.Writer, resp.Body)
 }
 
-func (s *ProxyService) countToken(token string) int {
-	if "" == token {
-		return 0
-	}
-
-	return len(s.tokenizer.Encode(token, nil, nil))
-}
-
 func (s *ProxyService) codeCompletions(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -255,30 +238,6 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 	if nil != err {
 		abortCodex(c, http.StatusBadRequest)
 		return
-	}
-
-	prompt := gjson.GetBytes(body, "prompt").String()
-	suffix := gjson.GetBytes(body, "suffix").String()
-	inputTokens := s.countToken(prompt)
-	suffixTokens := s.countToken(suffix)
-	outputTokens := int(gjson.GetBytes(body, "max_tokens").Int())
-
-	totalTokens := inputTokens + suffixTokens + outputTokens
-	if totalTokens > s.cfg.CodexMaxTokens { // reduce
-		left, right := 0, len(prompt)
-		for left < right {
-			mid := (left + right) / 2
-			subPrompt := prompt[mid:]
-			subInputTokens := s.countToken(subPrompt)
-			totalTokens = subInputTokens + suffixTokens + outputTokens
-			if totalTokens > s.cfg.CodexMaxTokens {
-				left = mid + 1
-			} else {
-				right = mid
-			}
-		}
-
-		body, _ = sjson.SetBytes(body, "prompt", prompt[left:])
 	}
 
 	body, _ = sjson.DeleteBytes(body, "extra")
