@@ -39,6 +39,7 @@
   "chat_api_key": "sk-xxx",
   "chat_api_organization": "",
   "chat_api_project": "",
+  "chat_max_tokens": 4096,
   "chat_model_default": "gpt-4o",
   "chat_model_map": {}
 }
@@ -48,7 +49,9 @@
 
 `chat_model_map` 是个模型映射的字典。会将请求的模型映射到你想要的，如果不存在映射，则使用 `chat_model_default` 。
 
-`code_max_tokens` 可以设置为你希望的最大Token数，你设置的时候最好知道自己在做什么。
+`codex_max_tokens` 可以设置为你希望的最大Token数，你设置的时候最好知道自己在做什么。
+
+`chat_max_tokens` 可以设置为你希望的最大Token数，你设置的时候最好知道自己在做什么。`gpt-4o` 输出最大为 `4096`
 
 可以通过 `OVERRIDE_` + 大写配置项作为环境变量，可以覆盖 `config.json` 中的值。例如：`OVERRIDE_CODEX_API_KEY=sk-xxxx`
 
