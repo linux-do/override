@@ -36,6 +36,7 @@ type config struct {
 	ChatApiKey           string            `json:"chat_api_key"`
 	ChatApiOrganization  string            `json:"chat_api_organization"`
 	ChatApiProject       string            `json:"chat_api_project"`
+	ChatMaxTokens        int               `json:"chat_max_tokens"`
 	ChatModelDefault     string            `json:"chat_model_default"`
 	ChatModelMap         map[string]string `json:"chat_model_map"`
 }
@@ -182,6 +183,10 @@ func (s *ProxyService) completions(c *gin.Context) {
 	body, _ = sjson.DeleteBytes(body, "intent")
 	body, _ = sjson.DeleteBytes(body, "intent_threshold")
 	body, _ = sjson.DeleteBytes(body, "intent_content")
+
+	if int(gjson.GetBytes(body, "max_tokens").Int()) > s.cfg.ChatMaxTokens {
+		body, _ = sjson.SetBytes(body, "max_tokens", s.cfg.ChatMaxTokens)
+	}
 
 	proxyUrl := s.cfg.ChatApiBase + "/chat/completions"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, proxyUrl, io.NopCloser(bytes.NewBuffer(body)))
