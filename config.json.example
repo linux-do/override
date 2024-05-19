@@ -12,5 +12,6 @@
   "chat_api_project": "",
   "chat_max_tokens": 4096,
   "chat_model_default": "gpt-4o",
-  "chat_model_map": {}
+  "chat_model_map": {},
+  "chat_locale": "zh_CN"
 }
