@@ -37,6 +37,7 @@ type config struct {
 	ChatMaxTokens        int               `json:"chat_max_tokens"`
 	ChatModelDefault     string            `json:"chat_model_default"`
 	ChatModelMap         map[string]string `json:"chat_model_map"`
+	ChatLocale           string            `json:"chat_locale"`
 }
 
 func readConfig() *config {
@@ -171,6 +172,19 @@ func (s *ProxyService) completions(c *gin.Context) {
 		model = s.cfg.ChatModelDefault
 	}
 	body, _ = sjson.SetBytes(body, "model", model)
+
+	if !gjson.GetBytes(body, "function_call").Exists() {
+		messages := gjson.GetBytes(body, "messages").Array()
+		lastIndex := len(messages) - 1
+		if !strings.Contains(messages[lastIndex].Get("content").String(), "Respond in the following locale") {
+			locale := s.cfg.ChatLocale
+			if locale == "" {
+				locale = "zh_CN"
+			}
+			body, _ = sjson.SetBytes(body, "messages."+strconv.Itoa(lastIndex)+".content", messages[lastIndex].Get("content").String()+"Respond in the following locale: "+locale+".")
+		}
+	}
+
 	body, _ = sjson.DeleteBytes(body, "intent")
 	body, _ = sjson.DeleteBytes(body, "intent_threshold")
 	body, _ = sjson.DeleteBytes(body, "intent_content")
