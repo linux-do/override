@@ -57,9 +57,40 @@
 
 * macOS `sed -i '' -E 's/\.maxPromptCompletionTokens\(([a-zA-Z0-9_]+),([0-9]+)\)/.maxPromptCompletionTokens(\1,2048)/' ~/.vscode/extensions/github.copilot-*/dist/extension.js`
 * Linux `sed -E 's/\.maxPromptCompletionTokens\(([a-zA-Z0-9_]+),([0-9]+)\)/.maxPromptCompletionTokens(\1,2048)/' ~/.vscode/extensions/github.copilot-*/dist/extension.js`
-* Windows 不知道怎么写，期待大佬PR。
+* Windows 可以用如下的python脚本进行替换
 * 因为是Patch，所以：**Copilot每次升级都要执行一次**。
 * 具体原因是客户端需要根据 `max_tokens` 精密计算prompt，后台删减会有问题。
+
+```
+# github copilot extention replace script
+import re
+import glob
+import os
+
+file_paths = glob.glob(os.getenv("USERPROFILE") + r'\.vscode\extensions\github.copilot-*\dist\extension.js')
+if file_paths == list():
+    print("no copilot extension found")
+    exit()
+
+pattern = re.compile(r'\.maxPromptCompletionTokens\(([a-zA-Z0-9_]+),([0-9]+)\)')
+replacement = r'.maxPromptCompletionTokens(\1,2048)'
+
+for file_path in file_paths:
+    with open(file_path, 'r', encoding="utf-8") as file:
+        content = file.read()
+    
+    new_content = pattern.sub(replacement, content)
+    if new_content == content:
+        print("no match found in " + file_path)
+        continue
+    else:
+        print("replaced " + file_path)
+    
+    with open(file_path, 'w', encoding='utf-8') as file:
+        file.write(new_content)
+
+print("replace finish")
+```
 
 ### 其他说明
 1. 理论上，Chat 部分可以使用 `chat2api` ，而 Codex 代码生成部分则不太适合使用 `chat2api` 。
