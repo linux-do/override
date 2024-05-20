@@ -55,9 +55,9 @@
 ### 重要说明
 `codex_max_tokens` 工作并不完美，已经移除。**JetBrains IDE 完美工作**，`VSCode` 需要执行以下脚本Patch之：
 
-* macOS `sed -i '' -E 's/\.maxPromptCompletionTokens\(([a-zA-Z0-9_]+),([0-9]+)\)/.maxPromptCompletionTokens(\1,2048)/' ~/.vscode/extensions/github.copilot-*/dist/extension.js`
-* Linux `sed -E 's/\.maxPromptCompletionTokens\(([a-zA-Z0-9_]+),([0-9]+)\)/.maxPromptCompletionTokens(\1,2048)/' ~/.vscode/extensions/github.copilot-*/dist/extension.js`
-* Windows 不知道怎么写，期待大佬PR。
+* macOS: `sed -i '' -E 's/\.maxPromptCompletionTokens\(([a-zA-Z0-9_]+),([0-9]+)\)/.maxPromptCompletionTokens(\1,2048)/' ~/.vscode/extensions/github.copilot-*/dist/extension.js`
+* Linux: `sed -E 's/\.maxPromptCompletionTokens\(([a-zA-Z0-9_]+),([0-9]+)\)/.maxPromptCompletionTokens(\1,2048)/' ~/.vscode/extensions/github.copilot-*/dist/extension.js`
+* Windows: 执行 `scripts/replace_max_tokens.vbs` 脚本修改 `codex_max_tokens` 为 **2048**，执行 `scripts/restore_max_tokens.vbs` 脚本恢复为默认值
 * 因为是Patch，所以：**Copilot每次升级都要执行一次**。
 * 具体原因是客户端需要根据 `max_tokens` 精密计算prompt，后台删减会有问题。
 
