@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-const InstructModel = "stable-code:3b-code-fp16"
+const DefaultInstructModel = "gpt-3.5-turbo-instruct"
 
 type config struct {
 	Bind                 string            `json:"bind"`
@@ -31,6 +31,7 @@ type config struct {
 	CodexApiKey          string            `json:"codex_api_key"`
 	CodexApiOrganization string            `json:"codex_api_organization"`
 	CodexApiProject      string            `json:"codex_api_project"`
+	CodeInstructModel    string            `json:"code_instruct_model"`
 	ChatApiBase          string            `json:"chat_api_base"`
 	ChatApiKey           string            `json:"chat_api_key"`
 	ChatApiOrganization  string            `json:"chat_api_organization"`
@@ -89,6 +90,9 @@ func readConfig() *config {
 				field.SetFloat(floatValue)
 			}
 		}
+	}
+	if _cfg.CodeInstructModel == "" {
+		_cfg.CodeInstructModel = DefaultInstructModel
 	}
 
 	return _cfg
@@ -291,7 +295,7 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 		},
 	}
 	body, _ = sjson.SetBytes(body, "messages", messages)
-	body, _ = sjson.SetBytes(body, "model", InstructModel)
+	body, _ = sjson.SetBytes(body, "model", s.cfg.CodeInstructModel)
 
 	// fmt.Printf("Request Body: %s\n", body)
 	// 2. 将转义的字符替换回原来的字符
