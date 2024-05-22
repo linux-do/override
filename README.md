@@ -34,13 +34,15 @@
   "codex_api_key": "sk-xxx",
   "codex_api_organization": "",
   "codex_api_project": "",
+  "code_instruct_model": "gpt-3.5-turbo-instruct",
   "chat_api_base": "https://api-proxy.oaipro.com/v1",
   "chat_api_key": "sk-xxx",
   "chat_api_organization": "",
   "chat_api_project": "",
   "chat_max_tokens": 4096,
   "chat_model_default": "gpt-4o",
-  "chat_model_map": {}
+  "chat_model_map": {},
+  "auth_token": ""
 }
 ```
 
@@ -57,6 +59,7 @@
 2. ollama run stable-code:code  (这个模型较小，大部分显卡都能跑)  
  或者你的显卡比较高安装这个：ollama run stable-code:3b-code-fp16
 3. 修改config.json里面的codex_api_base为http://localhost:11434/v1/chat
+4. 修改code_instruct_model为你的模型名称，stable-code:code或者stable-code:3b-code-fp16
 4. 剩下的就按照正常流程走即可。
 5. 如果调不通，请确认http://localhost:11434/v1/chat可用。
 
