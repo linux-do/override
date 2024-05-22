@@ -52,6 +52,14 @@
 
 可以通过 `OVERRIDE_` + 大写配置项作为环境变量，可以覆盖 `config.json` 中的值。例如：`OVERRIDE_CODEX_API_KEY=sk-xxxx`
 
+### 本地大模型设置
+1. 安装ollama 
+2. ollama run stable-code:code  (这个模型较小，大部分显卡都能跑)  
+ 或者你的显卡比较高安装这个：ollama run stable-code:3b-code-fp16
+3. 修改config.json里面的codex_api_base为http://localhost:11434/v1/chat
+4. 剩下的就按照正常流程走即可。
+5. 如果调不通，请确认http://localhost:11434/v1/chat可用。
+
 ### 重要说明
 `codex_max_tokens` 工作并不完美，已经移除。**JetBrains IDE 完美工作**，`VSCode` 需要执行以下脚本Patch之：
 
