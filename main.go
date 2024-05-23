@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -20,7 +21,9 @@ import (
 	"time"
 )
 
-const InstructModel = "gpt-3.5-turbo-instruct"
+const DefaultInstructModel = "gpt-3.5-turbo-instruct"
+
+const StableCodeModelPrefix = "stable-code"
 
 type config struct {
 	Bind                 string            `json:"bind"`
@@ -30,6 +33,7 @@ type config struct {
 	CodexApiKey          string            `json:"codex_api_key"`
 	CodexApiOrganization string            `json:"codex_api_organization"`
 	CodexApiProject      string            `json:"codex_api_project"`
+	CodeInstructModel    string            `json:"code_instruct_model"`
 	ChatApiBase          string            `json:"chat_api_base"`
 	ChatApiKey           string            `json:"chat_api_key"`
 	ChatApiOrganization  string            `json:"chat_api_organization"`
@@ -38,6 +42,7 @@ type config struct {
 	ChatModelDefault     string            `json:"chat_model_default"`
 	ChatModelMap         map[string]string `json:"chat_model_map"`
 	ChatLocale           string            `json:"chat_locale"`
+	AuthToken            string            `json:"auth_token"`
 }
 
 func readConfig() *config {
@@ -87,6 +92,9 @@ func readConfig() *config {
 				field.SetFloat(floatValue)
 			}
 		}
+	}
+	if _cfg.CodeInstructModel == "" {
+		_cfg.CodeInstructModel = DefaultInstructModel
 	}
 
 	return _cfg
@@ -150,10 +158,31 @@ func NewProxyService(cfg *config) (*ProxyService, error) {
 		client: client,
 	}, nil
 }
+func AuthMiddleware(authToken string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.Param("token")
+		if token != authToken {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
 
 func (s *ProxyService) InitRoutes(e *gin.Engine) {
-	e.POST("/v1/chat/completions", s.completions)
-	e.POST("/v1/engines/copilot-codex/completions", s.codeCompletions)
+	authToken := s.cfg.AuthToken // replace with your dynamic value as needed
+	if authToken != "" {
+		// 鉴权
+		v1 := e.Group("/:token/v1/", AuthMiddleware(authToken))
+		{
+			v1.POST("/chat/completions", s.completions)
+			v1.POST("/engines/copilot-codex/completions", s.codeCompletions)
+		}
+	} else {
+		e.POST("/v1/chat/completions", s.completions)
+		e.POST("/v1/engines/copilot-codex/completions", s.codeCompletions)
+	}
 }
 
 func (s *ProxyService) completions(c *gin.Context) {
@@ -254,13 +283,12 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 		return
 	}
 
-	body, _ = sjson.DeleteBytes(body, "extra")
-	body, _ = sjson.DeleteBytes(body, "nwo")
-	body, _ = sjson.SetBytes(body, "model", InstructModel)
+	body = ConstructRequestBody(body, s.cfg)
 
 	proxyUrl := s.cfg.CodexApiBase + "/completions"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, proxyUrl, io.NopCloser(bytes.NewBuffer(body)))
 	if nil != err {
+		//
 		abortCodex(c, http.StatusInternalServerError)
 		return
 	}
@@ -305,6 +333,47 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 	_, _ = io.Copy(c.Writer, resp.Body)
 }
 
+func ConstructRequestBody(body []byte, cfg *config) []byte {
+	body, _ = sjson.DeleteBytes(body, "extra")
+	body, _ = sjson.DeleteBytes(body, "nwo")
+	body, _ = sjson.SetBytes(body, "model", cfg.CodeInstructModel)
+	if strings.Contains(cfg.CodeInstructModel, StableCodeModelPrefix) {
+		return constructWithStableCodeModel(body)
+	}
+	if strings.HasSuffix(cfg.ChatApiBase, "chat") {
+		// @Todo  constructWithChatModel
+		// 如果code base以chat结尾则构建chatModel，暂时没有好的prompt
+	}
+	return body
+}
+
+func constructWithStableCodeModel(body []byte) []byte {
+	suffix := gjson.GetBytes(body, "suffix")
+	prompt := gjson.GetBytes(body, "prompt")
+	content := fmt.Sprintf("<fim_prefix>%s<fim_suffix>%s<fim_middle>", prompt, suffix)
+
+	// 创建新的 JSON 对象并添加到 body 中
+	messages := []map[string]string{
+		{
+			"role":    "user",
+			"content": content,
+		},
+	}
+	return constructWithChatModel(body, messages)
+}
+
+func constructWithChatModel(body []byte, messages interface{}) []byte {
+
+	body, _ = sjson.SetBytes(body, "messages", messages)
+
+	// fmt.Printf("Request Body: %s\n", body)
+	// 2. 将转义的字符替换回原来的字符
+	jsonStr := string(body)
+	jsonStr = strings.ReplaceAll(jsonStr, "\\u003c", "<")
+	jsonStr = strings.ReplaceAll(jsonStr, "\\u003e", ">")
+	return []byte(jsonStr)
+}
+
 func main() {
 	cfg := readConfig()
 
@@ -324,4 +393,5 @@ func main() {
 		log.Fatal(err)
 		return
 	}
+
 }
