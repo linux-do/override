@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: myoverride
+  IMAGE_NAME: yx135790mg/myoverride
 
 
 jobs:
