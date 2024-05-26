@@ -8,7 +8,7 @@ on:
     branches: [ "master" ]
 
 env:
-  REGISTRY: ghcr.io
+  REGISTRY: yx135790mg
   IMAGE_NAME: ${{ github.repository }}
 
 
