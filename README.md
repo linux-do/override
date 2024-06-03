@@ -34,13 +34,15 @@
   "codex_api_key": "sk-xxx",
   "codex_api_organization": "",
   "codex_api_project": "",
-  "codex_max_tokens": 4093,
+  "code_instruct_model": "gpt-3.5-turbo-instruct",
   "chat_api_base": "https://api-proxy.oaipro.com/v1",
   "chat_api_key": "sk-xxx",
   "chat_api_organization": "",
   "chat_api_project": "",
+  "chat_max_tokens": 4096,
   "chat_model_default": "gpt-4o",
-  "chat_model_map": {}
+  "chat_model_map": {},
+  "auth_token": ""
 }
 ```
 
@@ -48,9 +50,58 @@
 
 `chat_model_map` 是个模型映射的字典。会将请求的模型映射到你想要的，如果不存在映射，则使用 `chat_model_default` 。
 
-`code_max_tokens` 可以设置为你希望的最大Token数，你设置的时候最好知道自己在做什么。
+`chat_max_tokens` 可以设置为你希望的最大Token数，你设置的时候最好知道自己在做什么。`gpt-4o` 输出最大为 `4096`
 
 可以通过 `OVERRIDE_` + 大写配置项作为环境变量，可以覆盖 `config.json` 中的值。例如：`OVERRIDE_CODEX_API_KEY=sk-xxxx`
+
+### 本地大模型设置
+1. 安装ollama 
+2. ollama run stable-code:code  (这个模型较小，大部分显卡都能跑)  
+ 或者你的显卡比较高安装这个：ollama run stable-code:3b-code-fp16
+3. 修改config.json里面的codex_api_base为http://localhost:11434/v1/chat
+4. 修改code_instruct_model为你的模型名称，stable-code:code或者stable-code:3b-code-fp16
+4. 剩下的就按照正常流程走即可。
+5. 如果调不通，请确认http://localhost:11434/v1/chat可用。
+
+### 重要说明
+`codex_max_tokens` 工作并不完美，已经移除。**JetBrains IDE 完美工作**，`VSCode` 需要执行以下脚本Patch之：
+
+* macOS `sed -i '' -E 's/\.maxPromptCompletionTokens\(([a-zA-Z0-9_]+),([0-9]+)\)/.maxPromptCompletionTokens(\1,2048)/' ~/.vscode/extensions/github.copilot-*/dist/extension.js`
+* Linux `sed -E 's/\.maxPromptCompletionTokens\(([a-zA-Z0-9_]+),([0-9]+)\)/.maxPromptCompletionTokens(\1,2048)/' ~/.vscode/extensions/github.copilot-*/dist/extension.js`
+* Windows 可以用如下的python脚本进行替换
+* 因为是Patch，所以：**Copilot每次升级都要执行一次**。
+* 具体原因是客户端需要根据 `max_tokens` 精密计算prompt，后台删减会有问题。
+
+```
+# github copilot extention replace script
+import re
+import glob
+import os
+
+file_paths = glob.glob(os.getenv("USERPROFILE") + r'\.vscode\extensions\github.copilot-*\dist\extension.js')
+if file_paths == list():
+    print("no copilot extension found")
+    exit()
+
+pattern = re.compile(r'\.maxPromptCompletionTokens\(([a-zA-Z0-9_]+),([0-9]+)\)')
+replacement = r'.maxPromptCompletionTokens(\1,2048)'
+
+for file_path in file_paths:
+    with open(file_path, 'r', encoding="utf-8") as file:
+        content = file.read()
+    
+    new_content = pattern.sub(replacement, content)
+    if new_content == content:
+        print("no match found in " + file_path)
+        continue
+    else:
+        print("replaced " + file_path)
+    
+    with open(file_path, 'w', encoding='utf-8') as file:
+        file.write(new_content)
+
+print("replace finish")
+```
 
 ### 其他说明
 1. 理论上，Chat 部分可以使用 `chat2api` ，而 Codex 代码生成部分则不太适合使用 `chat2api` 。

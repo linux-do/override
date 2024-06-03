@@ -6,11 +6,12 @@
   "codex_api_key": "sk-xxx",
   "codex_api_organization": "",
   "codex_api_project": "",
-  "codex_max_tokens": 2048,
   "chat_api_base": "https://api-proxy.oaipro.com/v1",
   "chat_api_key": "sk-xxx",
   "chat_api_organization": "",
   "chat_api_project": "",
+  "chat_max_tokens": 4096,
   "chat_model_default": "gpt-4o",
-  "chat_model_map": {}
+  "chat_model_map": {},
+  "chat_locale": "zh_CN"
 }

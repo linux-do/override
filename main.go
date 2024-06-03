@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/linux-do/tiktoken-go"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"golang.org/x/net/http2"
@@ -23,7 +22,9 @@ import (
 	"time"
 )
 
-const INSTRUCT_MODEL = "gpt-3.5-turbo-instruct"
+const DefaultInstructModel = "gpt-3.5-turbo-instruct"
+
+const StableCodeModelPrefix = "stable-code"
 
 type GPTMessage struct {
 	Role    string `json:"role"`
@@ -162,8 +163,11 @@ type config struct {
 	ChatApiKey           string            `json:"chat_api_key"`
 	ChatApiOrganization  string            `json:"chat_api_organization"`
 	ChatApiProject       string            `json:"chat_api_project"`
+	ChatMaxTokens        int               `json:"chat_max_tokens"`
 	ChatModelDefault     string            `json:"chat_model_default"`
 	ChatModelMap         map[string]string `json:"chat_model_map"`
+	ChatLocale           string            `json:"chat_locale"`
+	AuthToken            string            `json:"auth_token"`
 }
 
 func readConfig() *config {
@@ -214,6 +218,9 @@ func readConfig() *config {
 			}
 		}
 	}
+	if _cfg.CodeInstructModel == "" {
+		_cfg.CodeInstructModel = DefaultInstructModel
+	}
 
 	return _cfg
 }
@@ -261,9 +268,8 @@ func closeIO(c io.Closer) {
 }
 
 type ProxyService struct {
-	cfg       *config
-	client    *http.Client
-	tokenizer *tiktoken.Tiktoken
+	cfg    *config
+	client *http.Client
 }
 
 func NewProxyService(cfg *config) (*ProxyService, error) {
@@ -272,21 +278,36 @@ func NewProxyService(cfg *config) (*ProxyService, error) {
 		return nil, err
 	}
 
-	tokenizer, err := tiktoken.EncodingForModel(INSTRUCT_MODEL)
-	if nil != err {
-		return nil, err
-	}
-
 	return &ProxyService{
-		cfg:       cfg,
-		client:    client,
-		tokenizer: tokenizer,
+		cfg:    cfg,
+		client: client,
 	}, nil
+}
+func AuthMiddleware(authToken string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.Param("token")
+		if token != authToken {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
 }
 
 func (s *ProxyService) InitRoutes(e *gin.Engine) {
-	e.POST("/v1/chat/completions", s.completions)
-	e.POST("/v1/engines/copilot-codex/completions", s.codeCompletions)
+	authToken := s.cfg.AuthToken // replace with your dynamic value as needed
+	if authToken != "" {
+		// 鉴权
+		v1 := e.Group("/:token/v1/", AuthMiddleware(authToken))
+		{
+			v1.POST("/chat/completions", s.completions)
+			v1.POST("/engines/copilot-codex/completions", s.codeCompletions)
+		}
+	} else {
+		e.POST("/v1/chat/completions", s.completions)
+		e.POST("/v1/engines/copilot-codex/completions", s.codeCompletions)
+	}
 }
 
 func (s *ProxyService) completions(c *gin.Context) {
@@ -305,7 +326,26 @@ func (s *ProxyService) completions(c *gin.Context) {
 		model = s.cfg.ChatModelDefault
 	}
 	body, _ = sjson.SetBytes(body, "model", model)
+
+	if !gjson.GetBytes(body, "function_call").Exists() {
+		messages := gjson.GetBytes(body, "messages").Array()
+		lastIndex := len(messages) - 1
+		if !strings.Contains(messages[lastIndex].Get("content").String(), "Respond in the following locale") {
+			locale := s.cfg.ChatLocale
+			if locale == "" {
+				locale = "zh_CN"
+			}
+			body, _ = sjson.SetBytes(body, "messages."+strconv.Itoa(lastIndex)+".content", messages[lastIndex].Get("content").String()+"Respond in the following locale: "+locale+".")
+		}
+	}
+
 	body, _ = sjson.DeleteBytes(body, "intent")
+	body, _ = sjson.DeleteBytes(body, "intent_threshold")
+	body, _ = sjson.DeleteBytes(body, "intent_content")
+
+	if int(gjson.GetBytes(body, "max_tokens").Int()) > s.cfg.ChatMaxTokens {
+		body, _ = sjson.SetBytes(body, "max_tokens", s.cfg.ChatMaxTokens)
+	}
 
 	proxyUrl := s.cfg.ChatApiBase + "/chat/completions"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, proxyUrl, io.NopCloser(bytes.NewBuffer(body)))
@@ -367,7 +407,6 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 		abortCodex(c, http.StatusBadRequest)
 		return
 	}
-
 	prompt := gjson.GetBytes(body, "prompt").String()
 	suffix := gjson.GetBytes(body, "suffix").String()
 	inputTokens := len(s.tokenizer.Encode(prompt, nil, nil))
@@ -423,6 +462,7 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, proxyUrl, io.NopCloser(bytes.NewBuffer(body)))
 	if nil != err {
+		//
 		abortCodex(c, http.StatusInternalServerError)
 		return
 	}
@@ -534,6 +574,47 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 	_ = resp.Body.Close()
 }
 
+func ConstructRequestBody(body []byte, cfg *config) []byte {
+	body, _ = sjson.DeleteBytes(body, "extra")
+	body, _ = sjson.DeleteBytes(body, "nwo")
+	body, _ = sjson.SetBytes(body, "model", cfg.CodeInstructModel)
+	if strings.Contains(cfg.CodeInstructModel, StableCodeModelPrefix) {
+		return constructWithStableCodeModel(body)
+	}
+	if strings.HasSuffix(cfg.ChatApiBase, "chat") {
+		// @Todo  constructWithChatModel
+		// 如果code base以chat结尾则构建chatModel，暂时没有好的prompt
+	}
+	return body
+}
+
+func constructWithStableCodeModel(body []byte) []byte {
+	suffix := gjson.GetBytes(body, "suffix")
+	prompt := gjson.GetBytes(body, "prompt")
+	content := fmt.Sprintf("<fim_prefix>%s<fim_suffix>%s<fim_middle>", prompt, suffix)
+
+	// 创建新的 JSON 对象并添加到 body 中
+	messages := []map[string]string{
+		{
+			"role":    "user",
+			"content": content,
+		},
+	}
+	return constructWithChatModel(body, messages)
+}
+
+func constructWithChatModel(body []byte, messages interface{}) []byte {
+
+	body, _ = sjson.SetBytes(body, "messages", messages)
+
+	// fmt.Printf("Request Body: %s\n", body)
+	// 2. 将转义的字符替换回原来的字符
+	jsonStr := string(body)
+	jsonStr = strings.ReplaceAll(jsonStr, "\\u003c", "<")
+	jsonStr = strings.ReplaceAll(jsonStr, "\\u003e", ">")
+	return []byte(jsonStr)
+}
+
 func main() {
 	cfg := readConfig()
 
@@ -553,4 +634,5 @@ func main() {
 		log.Fatal(err)
 		return
 	}
+
 }
