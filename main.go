@@ -171,6 +171,7 @@ func AuthMiddleware(authToken string) gin.HandlerFunc {
 }
 
 func (s *ProxyService) InitRoutes(e *gin.Engine) {
+	e.GET("/_ping", s.pong)
 	authToken := s.cfg.AuthToken // replace with your dynamic value as needed
 	if authToken != "" {
 		// 鉴权
@@ -183,6 +184,20 @@ func (s *ProxyService) InitRoutes(e *gin.Engine) {
 		e.POST("/v1/chat/completions", s.completions)
 		e.POST("/v1/engines/copilot-codex/completions", s.codeCompletions)
 	}
+}
+
+type Pong struct {
+	Now    int    `json:"now"`
+	Status string `json:"status"`
+	Ns1    string `json:"ns1"`
+}
+
+func (s *ProxyService) pong(c *gin.Context) {
+	c.JSON(http.StatusOK, Pong{
+		Now:    time.Now().Second(),
+		Status: "ok",
+		Ns1:    "200 OK",
+	})
 }
 
 func (s *ProxyService) completions(c *gin.Context) {
