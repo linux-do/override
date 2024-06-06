@@ -172,6 +172,7 @@ func AuthMiddleware(authToken string) gin.HandlerFunc {
 
 func (s *ProxyService) InitRoutes(e *gin.Engine) {
 	e.GET("/_ping", s.pong)
+	e.GET("/models", s.models)
 	authToken := s.cfg.AuthToken // replace with your dynamic value as needed
 	if authToken != "" {
 		// 鉴权
@@ -197,6 +198,113 @@ func (s *ProxyService) pong(c *gin.Context) {
 		Now:    time.Now().Second(),
 		Status: "ok",
 		Ns1:    "200 OK",
+	})
+}
+
+func (s *ProxyService) models(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"data": []gin.H{
+			{
+				"capabilities": gin.H{
+					"family": "gpt-3.5-turbo",
+					"object": "model_capabilities",
+					"type":   "chat",
+				},
+				"id":      "gpt-3.5-turbo",
+				"name":    "GPT 3.5 Turbo",
+				"object":  "model",
+				"version": "gpt-3.5-turbo-0613",
+			},
+			{
+				"capabilities": gin.H{
+					"family": "gpt-3.5-turbo",
+					"object": "model_capabilities",
+					"type":   "chat",
+				},
+				"id":      "gpt-3.5-turbo-0613",
+				"name":    "GPT 3.5 Turbo (2023-06-13)",
+				"object":  "model",
+				"version": "gpt-3.5-turbo-0613",
+			},
+			{
+				"capabilities": gin.H{
+					"family": "gpt-4",
+					"object": "model_capabilities",
+					"type":   "chat",
+				},
+				"id":      "gpt-4",
+				"name":    "GPT 4",
+				"object":  "model",
+				"version": "gpt-4-0613",
+			},
+			{
+				"capabilities": gin.H{
+					"family": "gpt-4",
+					"object": "model_capabilities",
+					"type":   "chat",
+				},
+				"id":      "gpt-4-0613",
+				"name":    "GPT 4 (2023-06-13)",
+				"object":  "model",
+				"version": "gpt-4-0613",
+			},
+			{
+				"capabilities": gin.H{
+					"family": "gpt-4-turbo",
+					"object": "model_capabilities",
+					"type":   "chat",
+				},
+				"id":      "gpt-4-0125-preview",
+				"name":    "GPT 4 Turbo (2024-01-25 Preview)",
+				"object":  "model",
+				"version": "gpt-4-0125-preview",
+			},
+			{
+				"capabilities": gin.H{
+					"family": "text-embedding-ada-002",
+					"object": "model_capabilities",
+					"type":   "embeddings",
+				},
+				"id":      "text-embedding-ada-002",
+				"name":    "Embedding V2 Ada",
+				"object":  "model",
+				"version": "text-embedding-ada-002",
+			},
+			{
+				"capabilities": gin.H{
+					"family": "text-embedding-ada-002",
+					"object": "model_capabilities",
+					"type":   "embeddings",
+				},
+				"id":      "text-embedding-ada-002-index",
+				"name":    "Embedding V2 Ada (Index)",
+				"object":  "model",
+				"version": "text-embedding-ada-002",
+			},
+			{
+				"capabilities": gin.H{
+					"family": "text-embedding-3-small",
+					"object": "model_capabilities",
+					"type":   "embeddings",
+				},
+				"id":      "text-embedding-3-small",
+				"name":    "Embedding V3 small",
+				"object":  "model",
+				"version": "text-embedding-3-small",
+			},
+			{
+				"capabilities": gin.H{
+					"family": "text-embedding-3-small",
+					"object": "model_capabilities",
+					"type":   "embeddings",
+				},
+				"id":      "text-embedding-3-small-inference",
+				"name":    "Embedding V3 small (Inference)",
+				"object":  "model",
+				"version": "text-embedding-3-small",
+			},
+		},
+		"object": "list",
 	})
 }
 
