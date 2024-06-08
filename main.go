@@ -182,7 +182,7 @@ func (s *ProxyService) InitRoutes(e *gin.Engine) {
 			v1.POST("/engines/copilot-codex/completions", s.codeCompletions)
 		}
 	} else {
-		e.POST("/v1/chat/completions", s.completions)
+		e.POST("/chat/completions", s.completions)
 		e.POST("/v1/engines/copilot-codex/completions", s.codeCompletions)
 	}
 }
