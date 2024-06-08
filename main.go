@@ -176,10 +176,10 @@ func (s *ProxyService) InitRoutes(e *gin.Engine) {
 	authToken := s.cfg.AuthToken // replace with your dynamic value as needed
 	if authToken != "" {
 		// 鉴权
-		v1 := e.Group("/:token/v1/", AuthMiddleware(authToken))
+		v1 := e.Group("/:token/", AuthMiddleware(authToken))
 		{
 			v1.POST("/chat/completions", s.completions)
-			v1.POST("/engines/copilot-codex/completions", s.codeCompletions)
+			v1.POST("/v1/engines/copilot-codex/completions", s.codeCompletions)
 		}
 	} else {
 		e.POST("/chat/completions", s.completions)
