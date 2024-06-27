@@ -25,6 +25,8 @@ const DefaultInstructModel = "gpt-3.5-turbo-instruct"
 
 const StableCodeModelPrefix = "stable-code"
 
+const DeepSeekModelPrefix = "deepseek-coder"
+
 type config struct {
 	Bind                 string            `json:"bind"`
 	ProxyUrl             string            `json:"proxy_url"`
@@ -463,6 +465,9 @@ func ConstructRequestBody(body []byte, cfg *config) []byte {
 	if strings.Contains(cfg.CodeInstructModel, StableCodeModelPrefix) {
 		return constructWithStableCodeModel(body)
 	}
+	if strings.Contains(strings.ToLower(cfg.CodeInstructModel), DeepSeekModelPrefix) {
+		return constructWithDeepSeekModel(body)
+	}
 	if strings.HasSuffix(cfg.ChatApiBase, "chat") {
 		// @Todo  constructWithChatModel
 		// 如果code base以chat结尾则构建chatModel，暂时没有好的prompt
@@ -474,6 +479,21 @@ func constructWithStableCodeModel(body []byte) []byte {
 	suffix := gjson.GetBytes(body, "suffix")
 	prompt := gjson.GetBytes(body, "prompt")
 	content := fmt.Sprintf("<fim_prefix>%s<fim_suffix>%s<fim_middle>", prompt, suffix)
+
+	// 创建新的 JSON 对象并添加到 body 中
+	messages := []map[string]string{
+		{
+			"role":    "user",
+			"content": content,
+		},
+	}
+	return constructWithChatModel(body, messages)
+}
+
+func constructWithDeepSeekModel(body []byte) []byte {
+	suffix := gjson.GetBytes(body, "suffix")
+	prompt := gjson.GetBytes(body, "prompt")
+	content := fmt.Sprintf("<｜fim▁begin｜>%s<｜fim▁hole｜>%s<｜fim▁end｜>", prompt, suffix)
 
 	// 创建新的 JSON 对象并添加到 body 中
 	messages := []map[string]string{
