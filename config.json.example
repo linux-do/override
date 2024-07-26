@@ -6,6 +6,7 @@
   "codex_api_key": "sk-xxx",
   "codex_api_organization": "",
   "codex_api_project": "",
+  "codex_max_tokens": 500,
   "code_instruct_model": "gpt-3.5-turbo-instruct",
   "chat_api_base": "https://api-proxy.oaipro.com/v1",
   "chat_api_key": "sk-xxx",

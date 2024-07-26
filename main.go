@@ -25,6 +25,8 @@ const DefaultInstructModel = "gpt-3.5-turbo-instruct"
 
 const StableCodeModelPrefix = "stable-code"
 
+const DeepSeekCoderModel = "deepseek-coder"
+
 type config struct {
 	Bind                 string            `json:"bind"`
 	ProxyUrl             string            `json:"proxy_url"`
@@ -33,6 +35,7 @@ type config struct {
 	CodexApiKey          string            `json:"codex_api_key"`
 	CodexApiOrganization string            `json:"codex_api_organization"`
 	CodexApiProject      string            `json:"codex_api_project"`
+	CodexMaxTokens       int               `json:"codex_max_tokens"`
 	CodeInstructModel    string            `json:"code_instruct_model"`
 	ChatApiBase          string            `json:"chat_api_base"`
 	ChatApiKey           string            `json:"chat_api_key"`
@@ -95,6 +98,14 @@ func readConfig() *config {
 	}
 	if _cfg.CodeInstructModel == "" {
 		_cfg.CodeInstructModel = DefaultInstructModel
+	}
+
+	if _cfg.CodexMaxTokens == 0 {
+		_cfg.CodexMaxTokens = 500
+	}
+
+	if _cfg.ChatMaxTokens == 0 {
+		_cfg.ChatMaxTokens = 4096
 	}
 
 	return _cfg
@@ -173,6 +184,7 @@ func AuthMiddleware(authToken string) gin.HandlerFunc {
 func (s *ProxyService) InitRoutes(e *gin.Engine) {
 	e.GET("/_ping", s.pong)
 	e.GET("/models", s.models)
+	e.GET("/v1/models", s.models)
 	authToken := s.cfg.AuthToken // replace with your dynamic value as needed
 	if authToken != "" {
 		// 鉴权
@@ -180,10 +192,16 @@ func (s *ProxyService) InitRoutes(e *gin.Engine) {
 		{
 			v1.POST("/chat/completions", s.completions)
 			v1.POST("/engines/copilot-codex/completions", s.codeCompletions)
+
+			v1.POST("/v1/chat/completions", s.completions)
+			v1.POST("/v1/engines/copilot-codex/completions", s.codeCompletions)
 		}
 	} else {
 		e.POST("/v1/chat/completions", s.completions)
 		e.POST("/v1/engines/copilot-codex/completions", s.codeCompletions)
+
+		e.POST("/v1/v1/chat/completions", s.completions)
+		e.POST("/v1/v1/engines/copilot-codex/completions", s.codeCompletions)
 	}
 }
 
@@ -394,7 +412,7 @@ func (s *ProxyService) completions(c *gin.Context) {
 func (s *ProxyService) codeCompletions(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 	if ctx.Err() != nil {
 		abortCodex(c, http.StatusRequestTimeout)
 		return
@@ -411,7 +429,6 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 	proxyUrl := s.cfg.CodexApiBase + "/completions"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, proxyUrl, io.NopCloser(bytes.NewBuffer(body)))
 	if nil != err {
-		//
 		abortCodex(c, http.StatusInternalServerError)
 		return
 	}
@@ -460,13 +477,24 @@ func ConstructRequestBody(body []byte, cfg *config) []byte {
 	body, _ = sjson.DeleteBytes(body, "extra")
 	body, _ = sjson.DeleteBytes(body, "nwo")
 	body, _ = sjson.SetBytes(body, "model", cfg.CodeInstructModel)
+
+	if int(gjson.GetBytes(body, "max_tokens").Int()) > cfg.CodexMaxTokens {
+		body, _ = sjson.SetBytes(body, "max_tokens", cfg.CodexMaxTokens)
+	}
+
 	if strings.Contains(cfg.CodeInstructModel, StableCodeModelPrefix) {
 		return constructWithStableCodeModel(body)
+	} else if strings.HasPrefix(cfg.CodeInstructModel, DeepSeekCoderModel) {
+		if gjson.GetBytes(body, "n").Int() > 1 {
+			body, _ = sjson.SetBytes(body, "n", 1)
+		}
 	}
+
 	if strings.HasSuffix(cfg.ChatApiBase, "chat") {
 		// @Todo  constructWithChatModel
 		// 如果code base以chat结尾则构建chatModel，暂时没有好的prompt
 	}
+
 	return body
 }
 
