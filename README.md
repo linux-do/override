@@ -60,8 +60,8 @@
 
 可以通过 `OVERRIDE_` + 大写配置项作为环境变量，可以覆盖 `config.json` 中的值。例如：`OVERRIDE_CODEX_API_KEY=sk-xxxx`
 
-### DeepSeek Code 设置
-如果你希望使用 DeepSeek FIM 来进行代码补全，着重修改以下配置：
+### DeepSeek Coder 设置
+如果你希望使用 DeepSeek Coder FIM 来进行代码补全，着重修改以下配置：
 
 ```json
   "codex_api_base": "https://api.deepseek.com/beta/v1",
