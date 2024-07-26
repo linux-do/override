@@ -6,7 +6,7 @@
 
 ```json
     "github.copilot.advanced": {
-        "debug.overrideCAPIUrl": "http://127.0.0.1:8181",
+        "debug.overrideCAPIUrl": "http://127.0.0.1:8181/v1",
         "debug.overrideProxyUrl": "http://127.0.0.1:8181",
         "debug.chatOverrideProxyUrl": "http://127.0.0.1:8181/v1/chat/completions",
         "authProvider": "github-enterprise"
