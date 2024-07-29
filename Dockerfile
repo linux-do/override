@@ -18,5 +18,5 @@ COPY config.json.example /app/config.json
 WORKDIR /app
 VOLUME /app
 
-EXPOSE 8080
+EXPOSE 8181
 CMD ["override"]
