@@ -42,6 +42,7 @@ type config struct {
 	ChatApiOrganization  string            `json:"chat_api_organization"`
 	ChatApiProject       string            `json:"chat_api_project"`
 	ChatMaxTokens        int               `json:"chat_max_tokens"`
+	ChatTopP			 float64		   `json:chat_top_p`
 	ChatModelDefault     string            `json:"chat_model_default"`
 	ChatModelMap         map[string]string `json:"chat_model_map"`
 	ChatLocale           string            `json:"chat_locale"`
@@ -106,6 +107,10 @@ func readConfig() *config {
 
 	if _cfg.ChatMaxTokens == 0 {
 		_cfg.ChatMaxTokens = 4096
+	}
+
+	if _cfg.ChatTopP <= 0 {
+		_cfg.ChatTopP = 0.9
 	}
 
 	return _cfg
@@ -362,6 +367,8 @@ func (s *ProxyService) completions(c *gin.Context) {
 	if int(gjson.GetBytes(body, "max_tokens").Int()) > s.cfg.ChatMaxTokens {
 		body, _ = sjson.SetBytes(body, "max_tokens", s.cfg.ChatMaxTokens)
 	}
+
+	body, _ = sjson.SetBytes(body, "top_p", s.cfg.ChatTopP)
 
 	proxyUrl := s.cfg.ChatApiBase + "/chat/completions"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, proxyUrl, io.NopCloser(bytes.NewBuffer(body)))
