@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
@@ -48,8 +49,8 @@ type config struct {
 	AuthToken            string            `json:"auth_token"`
 }
 
-func readConfig() *config {
-	content, err := os.ReadFile("config.json")
+func readConfig(path string) *config {
+	content, err := os.ReadFile(path)
 	if nil != err {
 		log.Fatal(err)
 	}
@@ -578,8 +579,13 @@ func constructWithChatModel(body []byte, messages interface{}) []byte {
 	return []byte(jsonStr)
 }
 
+var configPath string
+
 func main() {
-	cfg := readConfig()
+	flag.StringVar(&configPath, "c", "config.json", "Path to the configuration file")
+	flag.Parse()
+
+	cfg := readConfig(configPath)
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
@@ -591,6 +597,8 @@ func main() {
 	}
 
 	proxyService.InitRoutes(r)
+
+	log.Printf("\nstart server on %s\nconfig path: %s\n", cfg.Bind, configPath)
 
 	err = r.Run(cfg.Bind)
 	if nil != err {
