@@ -398,6 +398,12 @@ func (s *ProxyService) completions(c *gin.Context) {
 
 	if !gjson.GetBytes(body, "function_call").Exists() {
 		messages := gjson.GetBytes(body, "messages").Array()
+		for i, msg := range messages {
+			toolCalls := msg.Get("tool_calls").Array()
+			if len(toolCalls) == 0 {
+				body, _ = sjson.DeleteBytes(body, fmt.Sprintf("messages.%d.tool_calls", i))
+			}
+		}
 		lastIndex := len(messages) - 1
 		if !strings.Contains(messages[lastIndex].Get("content").String(), "Respond in the following locale") {
 			locale := s.cfg.ChatLocale
