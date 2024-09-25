@@ -49,7 +49,13 @@ type config struct {
 }
 
 func readConfig() *config {
-	content, err := os.ReadFile("config.json")
+	var configPath string
+	if len(os.Args) > 1 {
+		configPath = os.Args[1]
+	} else {
+		configPath = "config.json"
+	}
+	content, err := os.ReadFile(configPath)
 	if nil != err {
 		log.Fatal(err)
 	}
