@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+    "math/rand"
 )
 
 const DefaultInstructModel = "gpt-3.5-turbo-instruct"
@@ -26,6 +27,8 @@ const DefaultInstructModel = "gpt-3.5-turbo-instruct"
 const StableCodeModelPrefix = "stable-code"
 
 const DeepSeekCoderModel = "deepseek-coder"
+
+var SiliconflowModels = []string{"deepseek-ai/DeepSeek-V2.5", "deepseek-ai/DeepSeek-Coder-V2-Instruct", "Qwen/Qwen2.5-Coder-7B-Instruct"}
 
 type config struct {
 	Bind                 string            `json:"bind"`
@@ -474,6 +477,10 @@ func (s *ProxyService) completions(c *gin.Context) {
 	_, _ = io.Copy(c.Writer, resp.Body)
 }
 
+func contains(arr []string, str string) bool {
+    return strings.Contains(strings.Join(arr, ","), str)
+}
+
 func (s *ProxyService) codeCompletions(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -499,7 +506,7 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+s.cfg.CodexApiKey)
+	req.Header.Set("Authorization", "Bearer " + getRandomApiKey(s.cfg.CodexApiKey))
 	if "" != s.cfg.CodexApiOrganization {
 		req.Header.Set("OpenAI-Organization", s.cfg.CodexApiOrganization)
 	}
@@ -538,6 +545,16 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 	_, _ = io.Copy(c.Writer, resp.Body)
 }
 
+// 随机取一个apiKey
+func getRandomApiKey(paramStr string) string {
+    params := strings.Split(paramStr, ",")
+    rand.Seed(time.Now().UnixNano())
+    randomIndex := rand.Intn(len(params))
+	fmt.Println("Code completion API Key index:", randomIndex)
+	fmt.Println("Code completion API Key:", strings.TrimSpace(params[randomIndex]))
+    return strings.TrimSpace(params[randomIndex])
+}
+
 func ConstructRequestBody(body []byte, cfg *config) []byte {
 	body, _ = sjson.DeleteBytes(body, "extra")
 	body, _ = sjson.DeleteBytes(body, "nwo")
@@ -549,7 +566,7 @@ func ConstructRequestBody(body []byte, cfg *config) []byte {
 
 	if strings.Contains(cfg.CodeInstructModel, StableCodeModelPrefix) {
 		return constructWithStableCodeModel(body)
-	} else if strings.HasPrefix(cfg.CodeInstructModel, DeepSeekCoderModel) {
+	} else if strings.HasPrefix(cfg.CodeInstructModel, DeepSeekCoderModel) || contains(SiliconflowModels, cfg.CodeInstructModel) {
 		if gjson.GetBytes(body, "n").Int() > 1 {
 			body, _ = sjson.SetBytes(body, "n", 1)
 		}

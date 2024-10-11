@@ -69,6 +69,21 @@
   "code_instruct_model": "deepseek-coder",
 ```
 
+### Siliconflow 设置
+如果你希望使用 Siliconflow FIM 模型来进行代码补全，着重修改以下配置：
+
+```json
+  "codex_api_base": "https://api.siliconflow.cn/v1",
+  "codex_api_key": "sk-xxx,sk-xxx2,sk-xxx3...",
+  "code_instruct_model": "Qwen/Qwen2.5-Coder-7B-Instruct",
+```
+
+截至目前，Siliconflow 共有三个模型支持 FIM。分别是 `Qwen/Qwen2.5-Coder-7B-Instruct`、`deepseek-ai/DeepSeek-Coder-V2-Instruct` 、`deepseek-ai/DeepSeek-V2.5`。其中 `Qwen/Qwen2.5-Coder-7B-Instruct` 是免费模型，另外两个是收费模型。
+
+如果你有很多 Siliconflow API Key, 可以以英文逗号分隔填入`codex_api_key`字段, 这样可以很好的避免Siliconflow官方的 TPM RateLimit 对你编码速度影响(尤其使用收费模型时，用户级别较低，TPM 最低只有 10k)。
+
+
+
 ### 本地大模型设置
 1. 安装ollama 
 2. ollama run stable-code:code  (这个模型较小，大部分显卡都能跑)  
