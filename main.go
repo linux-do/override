@@ -22,6 +22,8 @@ import (
     "math/rand"
 )
 
+
+
 const DefaultInstructModel = "gpt-3.5-turbo-instruct"
 
 const StableCodeModelPrefix = "stable-code"
@@ -206,6 +208,8 @@ func (s *ProxyService) InitRoutes(e *gin.Engine) {
 			v1.POST("/v1/engines/copilot-codex/completions", s.codeCompletions)
 		}
 	} else {
+		e.POST("/chat/completions", s.completions)
+		e.POST("/engines/copilot-codex/completions", s.codeCompletions)
 		e.POST("/v1/chat/completions", s.completions)
 		e.POST("/v1/engines/copilot-codex/completions", s.codeCompletions)
 
