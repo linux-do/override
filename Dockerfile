@@ -10,6 +10,8 @@ RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o override
 
 FROM alpine:latest
 
+RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories
+
 RUN apk --no-cache add ca-certificates
 
 COPY --from=builder /app/override /usr/local/bin/
