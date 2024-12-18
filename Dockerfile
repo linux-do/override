@@ -10,7 +10,7 @@ RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o override
 
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  &&  echo "Asia/Shanghai" > /etc/timezone
 
 COPY --from=builder /app/override /usr/local/bin/
 COPY config.json.example /app/config.json

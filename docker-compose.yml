@@ -4,9 +4,9 @@ services:
     container_name: override-app
     restart: always
     build:
-        context: .
-        dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile
     volumes:
       - ./config.json:/app/config.json
     ports:
-        - "8181:8181"
+      - "8181:8181"

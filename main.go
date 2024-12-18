@@ -10,8 +10,10 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"golang.org/x/net/http2"
+	"html/template"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -19,7 +21,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-    "math/rand"
 )
 
 const DefaultInstructModel = "gpt-3.5-turbo-instruct"
@@ -49,6 +50,17 @@ type config struct {
 	ChatModelMap         map[string]string `json:"chat_model_map"`
 	ChatLocale           string            `json:"chat_locale"`
 	AuthToken            string            `json:"auth_token"`
+}
+
+// 转换结构体为键值对 Map
+func structToMap(cfg config) map[string]interface{} {
+	result := make(map[string]interface{})
+	v := reflect.ValueOf(cfg)
+	t := reflect.TypeOf(cfg)
+	for i := 0; i < v.NumField(); i++ {
+		result[t.Field(i).Name] = v.Field(i).Interface()
+	}
+	return result
 }
 
 func readConfig() *config {
@@ -194,6 +206,7 @@ func (s *ProxyService) InitRoutes(e *gin.Engine) {
 	e.GET("/_ping", s.pong)
 	e.GET("/models", s.models)
 	e.GET("/v1/models", s.models)
+	e.GET("/", s.index)
 	authToken := s.cfg.AuthToken // replace with your dynamic value as needed
 	if authToken != "" {
 		// 鉴权
@@ -218,6 +231,18 @@ type Pong struct {
 	Now    int    `json:"now"`
 	Status string `json:"status"`
 	Ns1    string `json:"ns1"`
+}
+
+func (s *ProxyService) index(c *gin.Context) {
+	cfg := *readConfig()
+	if c.Query("format") == "json" {
+		c.JSON(http.StatusOK, cfg)
+	} else {
+		c.HTML(http.StatusOK, "configPage", gin.H{
+			"Config": structToMap(cfg),
+		})
+
+	}
 }
 
 func (s *ProxyService) pong(c *gin.Context) {
@@ -478,7 +503,7 @@ func (s *ProxyService) completions(c *gin.Context) {
 }
 
 func contains(arr []string, str string) bool {
-    return strings.Contains(strings.Join(arr, ","), str)
+	return strings.Contains(strings.Join(arr, ","), str)
 }
 
 func (s *ProxyService) codeCompletions(c *gin.Context) {
@@ -506,7 +531,7 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer " + getRandomApiKey(s.cfg.CodexApiKey))
+	req.Header.Set("Authorization", "Bearer "+getRandomApiKey(s.cfg.CodexApiKey))
 	if "" != s.cfg.CodexApiOrganization {
 		req.Header.Set("OpenAI-Organization", s.cfg.CodexApiOrganization)
 	}
@@ -547,12 +572,12 @@ func (s *ProxyService) codeCompletions(c *gin.Context) {
 
 // 随机取一个apiKey
 func getRandomApiKey(paramStr string) string {
-    params := strings.Split(paramStr, ",")
-    rand.Seed(time.Now().UnixNano())
-    randomIndex := rand.Intn(len(params))
+	params := strings.Split(paramStr, ",")
+	rand.Seed(time.Now().UnixNano())
+	randomIndex := rand.Intn(len(params))
 	fmt.Println("Code completion API Key index:", randomIndex)
 	fmt.Println("Code completion API Key:", strings.TrimSpace(params[randomIndex]))
-    return strings.TrimSpace(params[randomIndex])
+	return strings.TrimSpace(params[randomIndex])
 }
 
 func ConstructRequestBody(body []byte, cfg *config) []byte {
@@ -607,12 +632,73 @@ func constructWithChatModel(body []byte, messages interface{}) []byte {
 	return []byte(jsonStr)
 }
 
+func getHTMLTemplate() string {
+	return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Config Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Configuration</h1>
+        <p>Below is the configuration data:</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range $key, $value := .Config }}
+                <tr>
+                    <td>{{ $key }}</td>
+                    <td>{{ $value }}</td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
+`
+}
+
 func main() {
 	cfg := readConfig()
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
-
+	r.SetHTMLTemplate(template.Must(template.New("configPage").Parse(getHTMLTemplate())))
 	proxyService, err := NewProxyService(cfg)
 	if nil != err {
 		log.Fatal(err)
